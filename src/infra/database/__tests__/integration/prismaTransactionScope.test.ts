@@ -1,19 +1,16 @@
 import * as cls from 'cls-hooked';
 import { PrismaClientManager } from '../../prismaClientManager';
-import { PrismaTransactionalClient } from '../../prismaClientWrapper';
-import {
-  PrismaTransactionScope,
-  PRISMA_CLIENT_KEY,
-} from '../../prismaTransactionScope';
+import { PrismaTransactionScope } from '../../prismaTransactionScope';
 import { v4 as uuid } from 'uuid';
 import { deleteAll } from '../../../../testing/database';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 describe('PrismaTransactionScope', () => {
-  let prisma: PrismaTransactionalClient;
+  let prisma: PrismaClient;
   let transactionContext: cls.Namespace;
 
   beforeEach(async () => {
-    prisma = new PrismaTransactionalClient();
+    prisma = new PrismaClient();
     transactionContext = cls.createNamespace('transaction');
     await deleteAll(prisma);
   });
@@ -134,12 +131,7 @@ describe('PrismaTransactionScope', () => {
 
     // Act
     await transactionScope.run(async () => {
-      const prismaClient =
-        clientManager.getClient() as PrismaTransactionalClient;
-
-      expect(prismaClient.isInsideTransaction).toBe(true);
-
-      prismaClient.$$transaction(async (innerPrisma) => {
+      await clientManager.transaction(async (innerPrisma) => {
         await innerPrisma.product.create({
           data: {
             id: uuid(),

@@ -25,13 +25,10 @@ export class CreateOrder {
     const order = Order.create(productIds);
 
     await this.transactionScope.run(async () => {
-      console.log('create')
       await this.orderRepo.create(order);
-      console.log('send')
       await this.notificationRepo.send(
         `Successfully created order: ${order.id}`
       );
-      console.log('end')
     });
   }
 }

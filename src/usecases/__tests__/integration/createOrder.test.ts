@@ -1,8 +1,4 @@
 import { PrismaClientManager } from '../../../infra/database/prismaClientManager';
-import {
-  PrismaClientWrapper,
-  PrismaTransactionalClient,
-} from '../../../infra/database/prismaClientWrapper';
 import { PrismaOrderRepository } from '../../../infra/database/repos/prismaOrderRepository';
 import { NotificationRepository } from '../../../repos/notificationRepository';
 import { OrderRepository } from '../../../repos/orderRepository';
@@ -13,17 +9,18 @@ import { v4 as uuid } from 'uuid';
 import { PrismaTransactionScope } from '../../../infra/database/prismaTransactionScope';
 import { deleteAll } from '../../../testing/database';
 import { MockNotificationRepository } from '../../../infra/mocks/repos/mockNotificationRepository';
+import { PrismaClient } from '@prisma/client';
 
 describe('CreateOrder', () => {
   let orderRepo: OrderRepository;
   let notificationRepo: jest.Mocked<NotificationRepository>;
   let transactionScope: TransactionScope;
-  let prisma: PrismaTransactionalClient;
+  let prisma: PrismaClient;
 
   beforeEach(async () => {
     const transactionContext = cls.createNamespace('transaction');
-    prisma = new PrismaTransactionalClient({
-      log: ['query', 'info', 'warn', 'error'],
+    prisma = new PrismaClient({
+      log: ['query']
     });
     transactionScope = new PrismaTransactionScope(prisma, transactionContext);
     const clientManager = new PrismaClientManager(prisma, transactionContext);
@@ -88,5 +85,35 @@ describe('CreateOrder', () => {
     expect(orders).toHaveLength(0);
     const orderProducts = await prisma.orderProduct.findMany();
     expect(orderProducts).toHaveLength(0);
+  });
+
+  it('should save concurrent executions', async () => {
+    // Arrange
+    const createOrder = new CreateOrder(
+      orderRepo,
+      notificationRepo,
+      transactionScope
+    );
+
+    const expectedProduct = await prisma.product.create({
+      data: {
+        id: uuid(),
+        name: 'Some Product',
+        stock: 10,
+      },
+    });
+
+    const expectedProductIds = [expectedProduct.id];
+
+    // Act
+    await Promise.all([
+      createOrder.execute({ productIds: expectedProductIds }),
+      createOrder.execute({ productIds: expectedProductIds }),
+    ]);
+
+    // Assert
+    const orders = await prisma.order.findMany();
+    expect(orders).toHaveLength(2);
+    expect(notificationRepo.send).toHaveBeenCalledTimes(2);
   });
 });

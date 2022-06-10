@@ -1,16 +1,16 @@
+import { PrismaClient } from '@prisma/client';
 import * as cls from 'cls-hooked';
-import { PrismaTransactionalClient } from '../../prismaClientWrapper';
 import {
   PrismaTransactionScope,
   PRISMA_CLIENT_KEY,
 } from '../../prismaTransactionScope';
 
 describe('PrismaTransactionScope', () => {
-  let prisma: PrismaTransactionalClient;
+  let prisma: PrismaClient;
   let transactionContext: cls.Namespace;
 
   beforeEach(() => {
-    prisma = new PrismaTransactionalClient();
+    prisma = new PrismaClient();
     transactionContext = cls.createNamespace('transaction');
   });
 
