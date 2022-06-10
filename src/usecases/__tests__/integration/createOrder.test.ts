@@ -19,12 +19,10 @@ describe('CreateOrder', () => {
 
   beforeEach(async () => {
     const transactionContext = cls.createNamespace('transaction');
-    prisma = new PrismaClient({
-      log: ['query']
-    });
+    prisma = new PrismaClient();
     transactionScope = new PrismaTransactionScope(prisma, transactionContext);
     const clientManager = new PrismaClientManager(prisma, transactionContext);
-    orderRepo = new PrismaOrderRepository(clientManager);
+    orderRepo = new PrismaOrderRepository(clientManager, transactionScope);
     notificationRepo = new MockNotificationRepository();
 
     await deleteAll(prisma);

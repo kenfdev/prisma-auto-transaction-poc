@@ -131,7 +131,8 @@ describe('PrismaTransactionScope', () => {
 
     // Act
     await transactionScope.run(async () => {
-      await clientManager.transaction(async (innerPrisma) => {
+      await transactionScope.run(async () => {
+        const innerPrisma = clientManager.getClient();
         await innerPrisma.product.create({
           data: {
             id: uuid(),

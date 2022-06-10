@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { TransactionScope } from '../../shared/transactionScope';
 
 import * as cls from 'cls-hooked';
@@ -15,17 +15,25 @@ export class PrismaTransactionScope implements TransactionScope {
   }
 
   async run(fn: () => Promise<void>): Promise<void> {
-    await this.prisma.$transaction(async (prisma) => {
-      await this.transactionContext.runPromise(async () => {
-        this.transactionContext.set(PRISMA_CLIENT_KEY, prisma);
+    const prisma = this.transactionContext.get(
+      PRISMA_CLIENT_KEY
+    ) as Prisma.TransactionClient;
 
-        try {
-          await fn();
-        } catch (err) {
-          this.transactionContext.set(PRISMA_CLIENT_KEY, null);
-          throw err;
-        }
+    if (prisma) {
+      await fn();
+    } else {
+      await this.prisma.$transaction(async (prisma) => {
+        await this.transactionContext.runPromise(async () => {
+          this.transactionContext.set(PRISMA_CLIENT_KEY, prisma);
+
+          try {
+            await fn();
+          } catch (err) {
+            this.transactionContext.set(PRISMA_CLIENT_KEY, null);
+            throw err;
+          }
+        });
       });
-    });
+    }
   }
 }

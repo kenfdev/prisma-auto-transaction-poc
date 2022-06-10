@@ -21,19 +21,4 @@ export class PrismaClientManager {
       return this.prisma;
     }
   }
-
-  async transaction(fn: (prisma: Prisma.TransactionClient) => Promise<void>) {
-    const prisma = this.transactionContext.get(
-      PRISMA_CLIENT_KEY
-    ) as Prisma.TransactionClient;
-
-    if (prisma) {
-      return await fn(prisma);
-    } else {
-      return await this.prisma.$transaction(async (innerPrisma) => {
-        console.log('created transaction');
-        await fn(innerPrisma);
-      });
-    }
-  }
 }
