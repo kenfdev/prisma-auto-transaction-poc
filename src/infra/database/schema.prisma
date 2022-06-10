@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./test.db"
+}
+
+model Product {
+  id            String         @id
+  name          String
+  stock         Int
+  createdAt     DateTime       @default(now())
+  orderProducts OrderProduct[]
+}
+
+model Order {
+  id        String         @id
+  products  OrderProduct[]
+  createdAt DateTime       @default(now())
+}
+
+model OrderProduct {
+  id        String   @id
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
+  Order     Order    @relation(fields: [orderId], references: [id])
+  orderId   String
+}
