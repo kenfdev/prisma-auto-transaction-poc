@@ -114,7 +114,7 @@ export class PrismaOrderRepository implements OrderRepository {
 }
 ```
 
-The truth is, it's just a little hack in the `PrismaTransactionScope`. It'll only create a transaction if you are already inside.
+The truth is, it's just a little hack in the `PrismaTransactionScope`. It'll only create a transaction if you are not already inside one.
 
 
 ```ts
