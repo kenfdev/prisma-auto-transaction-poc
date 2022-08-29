@@ -17,7 +17,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/cls-hooked": "^4.3.3",
     "@types/jest": "^28.1.1",
     "@types/node": "^17.0.41",
     "@types/uuid": "^8.3.4",
@@ -29,7 +28,6 @@
   },
   "dependencies": {
     "@prisma/client": "^3.15.1",
-    "cls-hooked": "^4.2.2",
     "uuid": "^8.3.2"
   }
 }
