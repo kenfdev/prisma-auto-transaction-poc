@@ -1,14 +1,14 @@
 import { PrismaClient } from '@prisma/client';
-import * as cls from 'cls-hooked';
+import { AsyncLocalStorage } from 'async_hooks';
 import { PrismaClientManager } from '../../prismaClientManager';
-import { PRISMA_CLIENT_KEY } from '../../prismaTransactionScope';
+import { TransactionContextStore } from '../../prismaTransactionScope';
 
 describe('PrismaClientManager', () => {
-  let transactionContext: cls.Namespace;
+  let transactionContext: AsyncLocalStorage<TransactionContextStore>;
   let prisma: PrismaClient;
 
   beforeEach(() => {
-    transactionContext = cls.createNamespace('transaction');
+    transactionContext = new AsyncLocalStorage<TransactionContextStore>();
     prisma = new PrismaClient();
   });
 
@@ -28,8 +28,11 @@ describe('PrismaClientManager', () => {
     const clientManager = new PrismaClientManager(prisma, transactionContext);
 
     const newClient = new PrismaClient();
-    transactionContext.run(() => {
-      transactionContext.set(PRISMA_CLIENT_KEY, newClient);
+    transactionContext.run({}, () => {
+      const store = transactionContext.getStore();
+      if (store) {
+        store.prisma = newClient;
+      }
 
       // Act
       const actual = clientManager.getClient();

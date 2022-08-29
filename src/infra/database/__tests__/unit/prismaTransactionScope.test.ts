@@ -1,17 +1,17 @@
 import { PrismaClient } from '@prisma/client';
-import * as cls from 'cls-hooked';
+import { AsyncLocalStorage } from 'async_hooks';
 import {
   PrismaTransactionScope,
-  PRISMA_CLIENT_KEY,
+  TransactionContextStore,
 } from '../../prismaTransactionScope';
 
 describe('PrismaTransactionScope', () => {
   let prisma: PrismaClient;
-  let transactionContext: cls.Namespace;
+  let transactionContext: AsyncLocalStorage<TransactionContextStore>;
 
   beforeEach(() => {
     prisma = new PrismaClient();
-    transactionContext = cls.createNamespace('transaction');
+    transactionContext = new AsyncLocalStorage<TransactionContextStore>();
   });
 
   it('should set a new client when transaction scope is run', async () => {
@@ -20,22 +20,19 @@ describe('PrismaTransactionScope', () => {
       prisma,
       transactionContext
     );
-    const spy = jest.spyOn(transactionContext, 'set');
-
     const expectedCallback = jest.fn();
 
     // Act
     await transactionScope.run(async () => {
-      const prismaClient = transactionContext.get(PRISMA_CLIENT_KEY);
+      const prismaClient = transactionContext.getStore()?.prisma;
       expect(prismaClient).toBeTruthy();
 
       expectedCallback();
     });
 
     // Assert
-    const prismaClient = transactionContext.get(PRISMA_CLIENT_KEY);
+    const prismaClient = transactionContext.getStore()?.prisma;
     expect(prismaClient).toBeFalsy();
-    expect(spy).toHaveBeenCalled();
     expect(expectedCallback).toHaveBeenCalled();
   });
 
@@ -52,10 +49,10 @@ describe('PrismaTransactionScope', () => {
     // Act
     await Promise.all([
       transactionScope.run(async () => {
-        client1 = transactionContext.get(PRISMA_CLIENT_KEY);
+        client1 = transactionContext.getStore()!.prisma;
       }),
       transactionScope.run(async () => {
-        client2 = transactionContext.get(PRISMA_CLIENT_KEY);
+        client2 = transactionContext.getStore()!.prisma;
       }),
     ]);
 

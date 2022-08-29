@@ -1,17 +1,20 @@
-import * as cls from 'cls-hooked';
+import { AsyncLocalStorage } from 'async_hooks';
 import { PrismaClientManager } from '../../prismaClientManager';
-import { PrismaTransactionScope } from '../../prismaTransactionScope';
+import {
+  PrismaTransactionScope,
+  TransactionContextStore,
+} from '../../prismaTransactionScope';
 import { v4 as uuid } from 'uuid';
 import { deleteAll } from '../../../../testing/database';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 describe('PrismaTransactionScope', () => {
   let prisma: PrismaClient;
-  let transactionContext: cls.Namespace;
+  let transactionContext: AsyncLocalStorage<TransactionContextStore>;
 
   beforeEach(async () => {
     prisma = new PrismaClient();
-    transactionContext = cls.createNamespace('transaction');
+    transactionContext = new AsyncLocalStorage();
     await deleteAll(prisma);
   });
 

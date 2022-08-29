@@ -1,20 +1,22 @@
 import { Prisma, PrismaClient } from '@prisma/client';
-import * as cls from 'cls-hooked';
-import { PRISMA_CLIENT_KEY } from './prismaTransactionScope';
+import { AsyncLocalStorage } from 'async_hooks';
+import { TransactionContextStore } from './prismaTransactionScope';
 
 export class PrismaClientManager {
   private prisma: PrismaClient;
-  private transactionContext: cls.Namespace;
+  private transactionContext: AsyncLocalStorage<TransactionContextStore>;
 
-  constructor(prisma: PrismaClient, transactionContext: cls.Namespace) {
+  constructor(
+    prisma: PrismaClient,
+    transactionContext: AsyncLocalStorage<TransactionContextStore>
+  ) {
     this.prisma = prisma;
     this.transactionContext = transactionContext;
   }
 
   getClient(): Prisma.TransactionClient {
-    const prisma = this.transactionContext.get(
-      PRISMA_CLIENT_KEY
-    ) as Prisma.TransactionClient;
+    const prisma = this.transactionContext.getStore()?.prisma;
+
     if (prisma) {
       return prisma;
     } else {
