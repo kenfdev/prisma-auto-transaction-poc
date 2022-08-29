@@ -3,10 +3,13 @@ import { PrismaOrderRepository } from '../../../infra/database/repos/prismaOrder
 import { NotificationRepository } from '../../../repos/notificationRepository';
 import { OrderRepository } from '../../../repos/orderRepository';
 import { TransactionScope } from '../../../shared/transactionScope';
-import * as cls from 'cls-hooked';
+import { AsyncLocalStorage } from 'async_hooks';
 import { CreateOrder } from '../../createOrder/createOrder';
 import { v4 as uuid } from 'uuid';
-import { PrismaTransactionScope } from '../../../infra/database/prismaTransactionScope';
+import {
+  PrismaTransactionScope,
+  TransactionContextStore,
+} from '../../../infra/database/prismaTransactionScope';
 import { deleteAll } from '../../../testing/database';
 import { MockNotificationRepository } from '../../../infra/mocks/repos/mockNotificationRepository';
 import { PrismaClient } from '@prisma/client';
@@ -18,7 +21,7 @@ describe('CreateOrder', () => {
   let prisma: PrismaClient;
 
   beforeEach(async () => {
-    const transactionContext = cls.createNamespace('transaction');
+    const transactionContext = new AsyncLocalStorage<TransactionContextStore>();
     prisma = new PrismaClient();
     transactionScope = new PrismaTransactionScope(prisma, transactionContext);
     const clientManager = new PrismaClientManager(prisma, transactionContext);
